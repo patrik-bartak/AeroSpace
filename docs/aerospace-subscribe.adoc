@@ -50,6 +50,27 @@ window-detected:: Fired when a new window is detected. Includes `windowId`, `wor
 
 binding-triggered:: Fired when a keyboard binding is triggered. Includes `binding`, `mode`.
 
+workspace-tree-changed:: A complete snapshot of all workspaces and their window trees. Includes `tree` and a monotonically increasing `revision`. Sent initially unless `--no-send-initial` is specified, and again when the snapshot changes, including changes that do not change focus.
+
+=== Workspace trees
+
+`aerospace subscribe workspace-tree-changed mode-changed` supplies the state needed by a workspace bar without follow-up `list-workspaces` or `list-windows` queries.
+Each `tree` contains `focusedWindowId` (when a window is focused) and `workspaces`.
+Every workspace contains:
+
+* `workspace`, `isFocused`, `isVisible`, and `monitorAppKitNsScreenScreensId` (the 1-based index in `NSScreen.screens`, matching the list-workspaces format variable).
+* `root`: the nested tiling tree. Container nodes have `type: "container"`, `layout` (`tiles` or `accordion`), `orientation` (`horizontal` or `vertical`), and ordered `children`.
+* Window nodes have `type: "window"`, `windowId`, `appName`, `appBundleId`, and `title`. App metadata can be absent. Titles are cached and updated by Accessibility title-change notifications.
+* `floatingWindows`, `fullscreenWindows`, and `hiddenWindows`: separate lists for windows outside the tiling tree. Floating windows have no tiling order. Minimized, closed, invisible and popup windows are excluded.
+
+Traverse each container's children in array order, recursively, to obtain the tiling window order. Window nodes are not grouped or sorted by app; multiple windows of an app remain distinct.
+Snapshots replace the previous state completely: an absent window or workspace has been removed.
+
+Updates cover focus, workspace visibility and monitor assignments, creation, closure, moves, reorders, layout and orientation changes, and window titles.
+Model refresh snapshots are captured before the final window layout pass; receiving one does not guarantee physical window movement has finished. Title-only changes publish the current tree immediately. Apps that do not support title-change notifications retain their initially cached titles.
+Unchanged snapshots are suppressed. Snapshot capture uses the model and cached titles rather than fetching every title through Accessibility.
+Revisions can have gaps and restart with the server. A subscriber may discard revisions older than the last one received on the same connection. Reconnecting sends a fresh complete snapshot.
+
 // =========================================================== Output Format
 include::util/conditional-output-format-header.adoc[]
 

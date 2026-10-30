@@ -3,6 +3,16 @@ import Common
 import XCTest
 
 final class SubscribeCmdArgsTest: XCTestCase {
+    func testParseWorkspaceTreeWithoutInitialSnapshot() {
+        switch parseSubscribeCmdArgs(["workspace-tree-changed", "--no-send-initial"].slice) {
+            case .cmd(let args):
+                assertEquals(args.events, [.workspaceTreeChanged])
+                XCTAssertFalse(args.sendInitial)
+            case .help, .failure:
+                XCTFail("Expected success")
+        }
+    }
+
     func testParseValidEvents() {
         let result = parseSubscribeCmdArgs(["focus-changed", "mode-changed"].slice)
         switch result {
@@ -31,7 +41,7 @@ final class SubscribeCmdArgsTest: XCTestCase {
             case .failure(let err):
                 let expectedMsg = """
                     ERROR: Can't parse 'unknown-event'.
-                           Possible values: (focus-changed|focused-monitor-changed|focused-workspace-changed|mode-changed|window-detected|binding-triggered)
+                           Possible values: (focus-changed|focused-monitor-changed|focused-workspace-changed|mode-changed|window-detected|binding-triggered|workspace-tree-changed)
                     """
                 assertEquals(err, .init(expectedMsg, 2))
         }

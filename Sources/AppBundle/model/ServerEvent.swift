@@ -1,5 +1,7 @@
 import Common
 
+@MainActor private var workspaceTreeRevision: UInt64 = 0
+
 public struct ServerEvent: Codable, Sendable {
     private let _event: ServerEventType
 
@@ -19,6 +21,10 @@ public struct ServerEvent: Codable, Sendable {
     private var mode: String?
     // periphery:ignore - false positive unused warning. The var properties are serialized to JSON
     private var binding: String?
+    // periphery:ignore - serialized to JSON
+    private var tree: WorkspaceTreeSnapshot?
+    // periphery:ignore - serialized to JSON
+    private var revision: UInt64?
 
     public var eventType: ServerEventType { _event }
 
@@ -44,5 +50,10 @@ public struct ServerEvent: Codable, Sendable {
 
     public static func bindingTriggered(mode: String, binding: String) -> ServerEvent {
         ServerEvent(_event: .bindingTriggered, mode: mode, binding: binding)
+    }
+
+    @MainActor static func workspaceTreeChanged(_ tree: WorkspaceTreeSnapshot) -> ServerEvent {
+        workspaceTreeRevision += 1
+        return ServerEvent(_event: .workspaceTreeChanged, tree: tree, revision: workspaceTreeRevision)
     }
 }
