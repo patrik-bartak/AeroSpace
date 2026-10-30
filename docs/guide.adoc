@@ -191,6 +191,26 @@ so the very same command above parses as `foo || (bar && baz)`.
 *(2)* In AeroSpace, the pipe operator `|` semantic matches `set -o pipefail` from traditional shells.
 ====
 
+[#ignored-apps]
+=== Ignoring apps
+
+Use `ignored-apps` to exclude apps from window management by exact, case-sensitive bundle ID:
+
+[source,toml]
+----
+ignored-apps = ['com.electron.gitify']
+----
+
+Ignored apps are not tiled, resized, hidden, assigned to workspaces, or included in AeroSpace's window list.
+Focusing an ignored app leaves AeroSpace's current workspace unchanged.
+Their windows remain under macOS and the app's own control.
+Window-detected callbacks do not run for these apps.
+The default is an empty list; apps without a bundle ID are not matched.
+
+Restart AeroSpace after changing this list.
+Once AeroSpace is tracking apps, reloading a config with a changed list is rejected and the current config remains active.
+`reload-config --dry-run` still validates the new config without applying it.
+
 [#key-mapping]
 === Keyboard layouts and key mapping
 

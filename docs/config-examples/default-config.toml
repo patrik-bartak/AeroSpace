@@ -17,6 +17,11 @@ start-at-login = false
 # After setting this to true, reload once manually to start the auto-reloading
 auto-reload-config = false
 
+# App bundle IDs to exclude from window management entirely.
+# Example: ignored-apps = ['com.electron.gitify']
+# Changes require restarting AeroSpace.
+ignored-apps = []
+
 # Normalizations. See: https://nikitabobko.github.io/AeroSpace/guide#normalization
 enable-normalization-flatten-containers = true
 enable-normalization-opposite-orientation-for-nested-containers = true

@@ -27,7 +27,11 @@ import Common
             try checkCancellation()
             // Ignores macOS menubar dropdown, but, unfortunately, it doesn't ignore non-native menu-like fake windows.
             // todo: It would be cool to somehow reuse isWindowHeuristic logic here
-            if await isAxWindowUnderMouse(location) == false { return }
+            if let element = await axElementUnderMouse(location),
+               !element.isWindow || config.ignoresApp(bundleId: element.appBundleId)
+            {
+                return
+            }
             try checkCancellation()
             let workspace = location.monitorApproximation.visibleWorkspace
             var window: Window? = nil
@@ -51,15 +55,4 @@ import Common
             }
         }
     }
-}
-
-@concurrent
-private nonisolated func isAxWindowUnderMouse(_ location: CGPoint) async -> Bool? {
-    let systemwide = AXUIElementCreateSystemWide()
-    var element: AXUIElement?
-    if unsafe AXUIElementCopyElementAtPosition(systemwide, Float(location.x), Float(location.y), &element) != .success {
-        return nil
-    }
-    guard let element else { return nil }
-    return element.get(Ax.parentWindowRecursive) != nil || element.get(Ax.roleAttr) == kAXWindowRole
 }
