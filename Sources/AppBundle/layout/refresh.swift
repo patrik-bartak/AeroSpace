@@ -45,6 +45,7 @@ func runHeavyCompleteRefreshSession(
             updateTrayText()
             SecureInputPanel.shared.refresh()
             try await normalizeLayoutReason()
+            broadcastWorkspaceTreeIfChanged()
             if shouldLayoutWorkspaces { try await layoutWorkspaces() }
         }
     }
@@ -75,6 +76,7 @@ func runLightSession<T>(
         let result = try await body()
         await refreshModel_nonCancellable()
 
+        broadcastWorkspaceTreeIfChanged()
         let focusAfter = globalFocus.windowOrNil
 
         updateTrayText()
