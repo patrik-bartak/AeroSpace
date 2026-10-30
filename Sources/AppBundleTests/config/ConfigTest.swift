@@ -64,6 +64,44 @@ final class ConfigTest: XCTestCase {
         assertEquals(result.warnings, [])
     }
 
+    func testIgnoredApps() {
+        let result = parseConfig("ignored-apps = ['com.electron.gitify', 'com.apple.finder']")
+        assertEquals(result.errors, [])
+        assertEquals(result.config.ignoredApps, ["com.electron.gitify", "com.apple.finder"])
+        assertTrue(result.config.ignoresApp(bundleId: "com.electron.gitify"))
+        assertFalse(result.config.ignoresApp(bundleId: "com.electron.gitify.helper"))
+        assertFalse(result.config.ignoresApp(bundleId: "com.electron.Gitify"))
+        assertFalse(result.config.ignoresApp(bundleId: nil))
+        assertEquals(parseConfig("").config.ignoredApps, [])
+    }
+
+    func testIgnoredAppsTypeErrors() {
+        assertEquals(parseConfig("ignored-apps = 'com.electron.gitify'").strErrors, [
+            "[ERROR] ignored-apps: Expected type is 'Array'. But actual type is 'String'",
+        ])
+        assertEquals(parseConfig("ignored-apps = ['com.electron.gitify', 1]").strErrors, [
+            "[ERROR] ignored-apps[1]: Expected type is 'String'. But actual type is 'Int'",
+        ])
+    }
+
+    func testIgnoredAppsReloadRequiresRestart() {
+        let result = parseConfig("ignored-apps = ['com.electron.gitify']")
+        let validated = validateIgnoredAppsReload(result, currentConfig: Config(), isTrackingApps: true)
+        assertEquals(validated.strErrors, ["[ERROR] ignored-apps: Changing ignored-apps requires restarting AeroSpace"])
+        assertFalse(validated.allowReloadConfig)
+        assertTrue(validateIgnoredAppsReload(result, currentConfig: Config(), isTrackingApps: false).allowReloadConfig)
+        assertTrue(validateIgnoredAppsReload(result, currentConfig: result.config, isTrackingApps: true).allowReloadConfig)
+        assertFalse(validateIgnoredAppsReload(parseConfig("ignored-apps = []"), currentConfig: result.config, isTrackingApps: true).allowReloadConfig)
+    }
+
+    func testIgnoredAppsReloadAcceptsReorderedList() {
+        let current = parseConfig("ignored-apps = ['com.electron.gitify', 'com.apple.finder']").config
+        let result = parseConfig("ignored-apps = ['com.apple.finder', 'com.electron.gitify', 'com.electron.gitify']")
+        let validated = validateIgnoredAppsReload(result, currentConfig: current, isTrackingApps: true)
+        assertEquals(validated.errors, [])
+        assertTrue(validated.allowReloadConfig)
+    }
+
     func testExecOnWorkspaceChangeDifferentTypesError() {
         let errors = parseConfig(
             """
