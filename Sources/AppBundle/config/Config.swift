@@ -43,6 +43,7 @@ struct Config: Withable {
     var defaultRootContainerOrientation: DefaultContainerOrientation = .auto
     var startAtLogin: Bool = false
     var autoReloadConfig: Bool = false
+    var ignoredApps: [String] = []
     var automaticallyUnhideMacosHiddenApps: Bool = false
     var accordionPadding: Int = 30
     var enableNormalizationOppositeOrientationForNestedContainers: Bool = true
@@ -61,6 +62,10 @@ struct Config: Withable {
     var modes: [String: Mode] = [:]
     var onWindowDetected: [WindowDetectedCallback] = []
     var onModeChanged: Shell<any Command> = .empty
+
+    func ignoresApp(bundleId: String?) -> Bool {
+        bundleId.map { ignoredApps.contains($0) } ?? false
+    }
 }
 
 struct FocusFollowsMouse: Withable {

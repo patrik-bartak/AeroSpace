@@ -9,7 +9,9 @@ enum GlobalObserver {
             return
         }
         let notifName = notification.name.rawValue
+        let bundleId = (notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication)?.bundleIdentifier
         Task.startUnstructured { @MainActor in
+            if config.ignoresApp(bundleId: bundleId) { return }
             if !TrayMenuModel.shared.isEnabled { return }
             if notifName == NSWorkspace.didActivateApplicationNotification.rawValue {
                 scheduleCancellableCompleteRefreshSession(.globalObserver(notifName), optimisticallyPreLayoutWorkspaces: true)
@@ -21,7 +23,9 @@ enum GlobalObserver {
 
     private static func onHideApp(_ notification: Notification) {
         let notifName = notification.name.rawValue
+        let bundleId = (notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication)?.bundleIdentifier
         Task.startUnstructured { @MainActor in
+            if config.ignoresApp(bundleId: bundleId) { return }
             guard let token: RunSessionGuard = .isServerEnabled else { return }
             try await runLightSession(.globalObserver(notifName), token) {
                 if config.automaticallyUnhideMacosHiddenApps {
@@ -61,6 +65,12 @@ enum GlobalObserver {
             Task.startUnstructured { @MainActor in
                 try await resetManipulatedWithMouseIfPossible()
                 let mouseLocation = mouseLocation
+                if !config.ignoredApps.isEmpty,
+                   let element = await axElementUnderMouse(mouseLocation),
+                   config.ignoresApp(bundleId: element.appBundleId)
+                {
+                    return
+                }
                 let clickedMonitor = mouseLocation.monitorApproximation
                 switch true {
                     // Detect clicks on desktop of different monitors

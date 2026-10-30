@@ -21,5 +21,6 @@ private var focusedApp: (any AbstractApp)? {
 
 @MainActor
 func getNativeFocusedWindow(_ cm: CancellationMode) async throws -> Window? {
-    try await focusedApp?.getFocusedWindow(cm)
+    guard let app = try await focusedApp, !config.ignoresApp(bundleId: app.rawAppBundleId) else { return nil }
+    return try await app.getFocusedWindow(cm)
 }

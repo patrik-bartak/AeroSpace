@@ -144,6 +144,7 @@ private let configParser: [String: any ParserProtocol<Config>] = [
 
     "start-at-login": Parser(\.startAtLogin, parseBool),
     "auto-reload-config": Parser(\.autoReloadConfig, parseBool),
+    "ignored-apps": Parser(\.ignoredApps, parseArrayOfStrings),
     "automatically-unhide-macos-hidden-apps": Parser(\.automaticallyUnhideMacosHiddenApps, parseBool),
     "accordion-padding": Parser(\.accordionPadding, parseInt),
     persistentWorkspacesKey: Parser(\.persistentWorkspaces, parsePersistentWorkspaces),

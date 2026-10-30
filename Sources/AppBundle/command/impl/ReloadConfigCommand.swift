@@ -28,7 +28,9 @@ struct ReloadConfigResult {
     forceConfigUrl: URL? = nil,
 ) async -> ReloadConfigResult {
     let result = readConfig(forceConfigUrl: forceConfigUrl)
-    let parseResult = result.parseConfigResult
+    let parseResult = args.dryRun
+        ? result.parseConfigResult
+        : validateIgnoredAppsReload(result.parseConfigResult, currentConfig: config, isTrackingApps: MacApp.isTrackingApps)
     let warningsAsErrors = args.warningsAsErrors
 
     var errors = parseResult.errors.map { $0.description(.error) }
@@ -81,4 +83,15 @@ private func parsedWithWarningsMsg(configUrl: URL, warningsCount: Int, lines: [S
     let path = configUrl.absoluteURL.path.singleQuoted
     let header = "Parsed \(path) with \(warningsCount) warning(s). Feel free to close this window."
     return "\(header)\n\n\(lines.joined(separator: "\n\n"))"
+}
+
+// Releasing already managed windows also requires restoring windows hidden outside the screen.
+// Keep app exclusion a startup setting until that transition is supported.
+func validateIgnoredAppsReload(_ result: ParseConfigResult, currentConfig: Config, isTrackingApps: Bool) -> ParseConfigResult {
+    guard isTrackingApps, Set(result.config.ignoredApps) != Set(currentConfig.ignoredApps) else { return result }
+    return ParseConfigResult(
+        config: result.config,
+        errors: result.errors + [.init(.rootKey("ignored-apps"), "Changing ignored-apps requires restarting AeroSpace", preventConfigReload: true)],
+        warnings: result.warnings,
+    )
 }
