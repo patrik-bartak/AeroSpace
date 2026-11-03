@@ -64,11 +64,17 @@ final class Workspace: TreeNode, NonLeafTreeNodeObject, Hashable, Comparable {
             _ = get(byName: name) // Make sure that all persistent workspaces are "cached"
         }
         let focus = globalFocus
-        workspaceNameToWorkspace = workspaceNameToWorkspace.filter { (_, workspace: Workspace) in
+        let (kept, collected) = workspaceNameToWorkspace.partition { (_, workspace: Workspace) in
             config.persistentWorkspaces.contains(workspace.name) ||
                 !workspace.isEffectivelyEmpty ||
                 workspace.isVisible ||
                 workspace.name == focus.workspace.name
+        }
+        workspaceNameToWorkspace = kept
+        // A collected workspace must leave the tree too. Otherwise, it stays a child of its WorkspacesContainer,
+        // and the next Workspace.get(byName:) creates a second object with the same name
+        for workspace in collected.values where workspace.isBound {
+            workspace.unbindFromParent()
         }
     }
 
